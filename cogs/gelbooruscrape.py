@@ -73,7 +73,7 @@ class GelbooruScrapeCog(commands.Cog, name = "GelbooruScrape"):
                 return 
             tagList = tags.split("+")
 
-            sql = f"SELECT * FROM sauce WHERE tags LIKE '%{tagList[1]}%'"
+            sql = f"SELECT * FROM sauce WHERE tags LIKE '%{tagList[0]}%'"
             for elem in tagList:
                 sql += f" AND tags LIKE '%{elem}%'"   
 
