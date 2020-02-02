@@ -3,7 +3,7 @@ A discord bot that scrapes a popular imageboard for images and sends those image
 
 ## Commands
 
-`.gelbooru load_db [tags separated by +] [limit=50]` will load the local database with (50 by default) pages corresponding to the tags since calling a get request each time takes too long.  
+`.gelbooru load_db [tags separated by +] [limit=50]` will load the local database with (50 by default) pages corresponding to the tags since calling a large get request each time will get me blocked from making requests.  
 
 `.gelbooru bomb [tags separated by +] [limit=10] [sfw=false]` will randomy select ten images corresponding to the tags. Modifying the limit will change the number of images, and adding "True" at the end of a command will send safe for work results only. 
 
