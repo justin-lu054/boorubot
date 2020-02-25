@@ -25,7 +25,7 @@ To add any image from the bot to your favourites, simply thumbs react the image.
 
 `.gelbooru recommend [limit=10]` will select (ten by default) images that are the most similar to the user's favourites. This recommendation system uses tag counts, and cosine similarity as a similarity metric. It is entirely dependent on the accuracy of the image metadata. Different simlarity metrics, and reccomendation systems are being tested.
 
-###.rule34 
+### .rule34 
 
 The exact same commands as above can be used for the rule34 image board. 
 
