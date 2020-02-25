@@ -3,7 +3,7 @@ A discord bot that scrapes a popular imageboard for images and sends those image
 
 ## Commands
 
-###.gelbooru
+### .gelbooru
 
 If you would like to specify more than one tag to search by, please separate your tags with a +
 
