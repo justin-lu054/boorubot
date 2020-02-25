@@ -7,6 +7,7 @@ import json
 import sqlite3
 import random
 import typing
+from cogs.imagereccomend import getNRecommendations
 
 def thumbToImg(thumblink):
     imglink = thumblink.replace("gelbooru", "img2.gelbooru").replace("thumbnails", "samples").replace("thumbnail_", "sample_")
@@ -23,22 +24,22 @@ class Rule34ScrapeCog(commands.Cog, name = "Rule34Scrape"):
         if user == self.bot.user:
             return 
 
-        if "us.rule34.xxx" in reaction.message.content.lower():
+        if "us.rule34.xxx" in reaction.message.embeds[0].image.url:
             if (reaction.emoji == '👍'): 
                 db = sqlite3.connect("scrapedlinks.sqlite")
                 cursor = db.cursor()
-                sql = f"SELECT tags FROM sauce34 WHERE link = '{reaction.message.content}'"
+                sql = f"SELECT tags FROM sauce34 WHERE link = '{reaction.message.embeds[0].image.url}'"
                 cursor.execute(sql)
                 result = cursor.fetchone()
 
                 if (result is None):
-                    await ctx.send("Unknown link detected")
+                    await self.bot.send("Unknown link detected")
                     return
 
                 tags = result[0]
 
                 sql = "INSERT OR IGNORE INTO sauce34users(user_id, link, tags) VALUES(?, ?, ?)"
-                val = (user.id, reaction.message.content, tags)
+                val = (user.id, reaction.message.embeds[0].image.url, tags)
                 cursor.execute(sql, val)
                 db.commit()
                 cursor.close()
@@ -121,7 +122,11 @@ class Rule34ScrapeCog(commands.Cog, name = "Rule34Scrape"):
                 limit = len(result)
 
             for i in range(limit): 
-                message = await ctx.send(random.choice(result)[0])
+                embed = discord.Embed(title=f"{i+1}/{limit}", 
+                                    description="",
+                                    color=discord.Color.blue())
+                embed.set_image(url=random.choice(result)[0])
+                message = await ctx.send(embed=embed)
                 await message.add_reaction('\U0001F44D')
             db.commit()
             cursor.close()
@@ -155,7 +160,11 @@ class Rule34ScrapeCog(commands.Cog, name = "Rule34Scrape"):
                 limit = len(result)
 
             for i in range(limit): 
-                message = await ctx.send(result[i][0])
+                embed = discord.Embed(title=f"{i+1}/{limit}", 
+                                    description="",
+                                    color=discord.Color.blue())
+                embed.set_image(url=result[i][0])
+                message = await ctx.send(embed=embed)
                 await message.add_reaction('\U0001F44D')
             db.commit()
             cursor.close()
@@ -189,9 +198,13 @@ class Rule34ScrapeCog(commands.Cog, name = "Rule34Scrape"):
             if limit > len(result):
                 limit = len(result)
 
-            for i in range(limit): 
-                message = await ctx.send(result[i][0])
-                await message.add_reaction('\U0001F44D')
+            for i in range(limit):
+                embed = discord.Embed(title=f"{i+1}/{limit}", 
+                                    description="",
+                                    color=discord.Color.blue())
+                embed.set_image(url=result[i][0])
+                message = await ctx.send(embed=embed)
+                await message.add_reaction('\U0001F44D') 
             db.commit()
             cursor.close()
             db.close()
@@ -260,14 +273,37 @@ class Rule34ScrapeCog(commands.Cog, name = "Rule34Scrape"):
             sql = (f"SELECT link FROM sauce34users WHERE user_id = '{ctx.message.author.id}'")
             cursor.execute(sql)
             results = cursor.fetchall() 
-            await ctx.send(f"Results found for {ctx.message.author.name}:")
+            count = 1
             for result in results: 
-                await ctx.send(result[0])
+                embed = discord.Embed(title=f"{count}/{len(results)}", 
+                                    description=f"{ctx.message.author.name}'s favourites",
+                                    color=discord.Color.blue())
+                embed.set_image(url=result[0])
+                message = await ctx.send(embed=embed)
+                count += 1
             db.commit()
             cursor.close()
             db.close()
         except:
             await ctx.send("An error occurred. Usage: .favourites")    
+    @rule34.command()
+    async def recommend(self, ctx, number: int=10):
+        try:
+            recommendations = getNRecommendations(ctx.message.author.id, "rule34", number)
+            if (recommendations is False):
+                await ctx.send("Please add some items to your favourites first.")
+            else:
+                count = 1
+                for link in recommendations:
+                    embed = discord.Embed(title=f"{count}/{len(recommendations)}", 
+                                    description=f"{ctx.message.author.name}'s recommendations",
+                                    color=discord.Color.blue())
+                    embed.set_image(url=link)
+                    message = await ctx.send(embed=embed)
+                    await message.add_reaction('\U0001F44D')
+                    count += 1
+        except:
+            await ctx.send("Usage: .recommend [numofrecommendations]")
 
 def setup(bot):
     bot.add_cog(Rule34ScrapeCog(bot))

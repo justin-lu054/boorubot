@@ -8,11 +8,11 @@ import sqlite3
 
 #YOUR .env FILEPATH HERE
 #load_dotenv(r"C:\Users\justi\Discord\keys.env")
-TOKEN = "BOT_TOKEN_HERE"
-GUILD = "LocalBotTest"
+TOKEN = "YOUR_TOKEN_HERE"
+GUILD = ""
 
 bot = commands.Bot(command_prefix = '.')
-
+bot.remove_command("help")
 @bot.event
 async def on_ready():
     #Select the guild the bot is connected to
@@ -25,8 +25,8 @@ async def on_ready():
     print(f"Guild members:\n - {members}")
 
 #Loads all of the cogs
-#removed unnecessary cogs
-initial_extensions = ["cogs.moderation", "cogs.matrixcalculation", "cogs.gelbooruscrape", "cogs.rule34scrape"]
+initial_extensions = ["cogs.moderation", "cogs.gelbooruscrape", "cogs.rule34scrape",
+                     "cogs.errorhandler"]
 if __name__ == "__main__":
     for extension in initial_extensions:
         try:
@@ -34,48 +34,11 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Failed to load extension {extension}", file=sys.stderr)
 
-@bot.event
-async def on_member_join(member):
-    await member.create_dm()
-    await member.dm_channel.send(f"Hi {member.name}, welcome to the server")
-
-@bot.event
+@bot.event  
 async def on_error(event, *args, **kwargs):
     with open("err.log", "a") as f:
         if event == "on_message":
             f.write(f"Unhandled message: {args[0]}\n")
-#try:
-bot.run(TOKEN)
-#except:
-    #print("Error running bot")
 
-#temporairly disabling the time logger
-"""
-finally:
-    #IMPORTANT!!!! YOU MUST USE CTRL+C TO CLOSE IT AND NOT KILL TERMINAL!
-    #log the last online time for the bot
-    #Use DateTime API
-    for guild in bot.guilds:
-        if guild.name == GUILD:
-            break
-    #get time in UTC
-    endTime = datetime.datetime.utcnow()
-    db = sqlite3.connect("leveling.sqlite")
-    cursor = db.cursor()
-    cursor.execute(f"SELECT time FROM lastonline WHERE server_id = '{guild.id}'")
-    result = cursor.fetchone()
-    if result is None:
-        sql = ("INSERT INTO lastonline(time, server_id) VALUES(?, ?)")
-        val = (endTime, guild.id)
-        cursor.execute(sql, val)
-        db.commit()
-        cursor.close()
-        db.close()
-    else:
-        sql = ("UPDATE lastonline SET time = ? where server_id = ?")
-        val = (endTime, guild.id)
-        cursor.execute(sql, val)
-        db.commit()
-        cursor.close()
-        db.close()
-"""
+
+bot.run(TOKEN)
