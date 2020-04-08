@@ -20,7 +20,7 @@ class ModCog(commands.Cog, name = "Moderation"):
                 await ctx.guild.kick(user=user, reason=reason)
                 await ctx.send(f"{user} has been kicked for {reason}")
         else:
-            await ctx.send("Invalid permissions.")    
+            await ctx.send("eat my greasy cock and balls")    
 
     @commands.command()
     async def ban(self, ctx, user: discord.Member, *, reason=None): 
@@ -34,7 +34,7 @@ class ModCog(commands.Cog, name = "Moderation"):
                 await ctx.guild.ban(user=user, reason=reason)
                 await ctx.send(f"{user} has been banned for {reason}")
         else:
-            await ctx.send("Invalid permissions.")    
+            await ctx.send("eat my greasy cock and balls")    
 
     @commands.command()
     async def purge(self, ctx, *, number:int=None):

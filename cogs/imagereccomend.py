@@ -73,5 +73,5 @@ def getNRecommendations(user_id, source, n):
     cursor.close()
     db.commit()
     db.close()
-    return list(dict.fromkeys(links))
+    return list(dict.fromkeys(links))[0:n]
 

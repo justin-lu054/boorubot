@@ -6,10 +6,10 @@ import sys
 import datetime
 import sqlite3
 
-#YOUR .env FILEPATH HERE
-#load_dotenv(r"C:\Users\justi\Discord\keys.env")
-TOKEN = "YOUR_TOKEN_HERE"
-GUILD = ""
+
+
+TOKEN = ""
+GUILD = "LocalBotTest"
 
 bot = commands.Bot(command_prefix = '.')
 bot.remove_command("help")
@@ -25,8 +25,8 @@ async def on_ready():
     print(f"Guild members:\n - {members}")
 
 #Loads all of the cogs
-initial_extensions = ["cogs.moderation", "cogs.gelbooruscrape", "cogs.rule34scrape",
-                     "cogs.errorhandler"]
+#removed unnecessary cogs
+initial_extensions = ["cogs.moderation", "cogs.imgcog", "cogs.errorhandler"]
 if __name__ == "__main__":
     for extension in initial_extensions:
         try:
