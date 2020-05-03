@@ -24,7 +24,10 @@ def dump_gelbooru(tags: str, pageLimit: int) -> int:
         url += ("&pid=" + str(pid))
         url += ("&tags=" + tags)
         resp = requests.get(url)
-        data = resp.json() 
+        try:
+            data = resp.json() 
+        except:
+            break
         if (data == []):
             break 
         for entry in data: 
@@ -58,7 +61,12 @@ def dump_rule34(tags: str, pageLimit: int) -> int:
         url += ("&tags=" + tags)
         resp = requests.get(url)
         data = resp.json()
-                
+        
+        try:
+            data = resp.json() 
+        except:
+            break
+
         if (data == []):
             break 
 
@@ -70,9 +78,10 @@ def dump_rule34(tags: str, pageLimit: int) -> int:
                 sql = "INSERT OR IGNORE INTO sauce34(link, tags, score) VALUES(?, ?, ?)"
                 val = (link, entryTags, score)
                 cursor.execute(sql, val)   
+                print(pid)
             except:
                 print("An error occurred.")
-    pid += 1
+            pid += 1
     db.commit()
     cursor.close()
     db.close()

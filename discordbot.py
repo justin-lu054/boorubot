@@ -4,12 +4,13 @@ from discord.ext import commands
 import asyncio
 import sys
 import datetime
+import os
+from dotenv import load_dotenv
 import sqlite3
 
-
-
-TOKEN = ""
-GUILD = "LocalBotTest"
+load_dotenv("config.env")
+TOKEN = os.getenv("BOT_TOKEN")
+GUILD = os.getenv("GUILD")
 
 bot = commands.Bot(command_prefix = '.')
 bot.remove_command("help")
@@ -39,6 +40,5 @@ async def on_error(event, *args, **kwargs):
     with open("err.log", "a") as f:
         if event == "on_message":
             f.write(f"Unhandled message: {args[0]}\n")
-
 
 bot.run(TOKEN)

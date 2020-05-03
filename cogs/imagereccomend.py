@@ -1,15 +1,13 @@
 import sqlite3
 from collections import Counter 
-from collections import defaultdict
-from operator import itemgetter
 
-#GETS THE N TOP RECCOMENDATIONS (BY K NEAREST NEIGHBORS AND COSINE SIMILARITY)
+#GETS THE N TOP RECCOMENDATIONS (BY K NEAREST NEIGHBORS AND COSINE SIMILARITY METRIC)
 #IF NO FAVOURITES FOUND FOR USER, RETURNS FALSE
 def getNRecommendations(user_id, source, n):
     db = sqlite3.connect("scrapedlinks.sqlite")
     cursor = db.cursor()
 
-    #FILTER BY TOP 3 TAGS USING LIKE AND OR OPERATORS!!!!
+    #Fetch information from the user's favourited images and tags
     sql = ""
     if (source == "gelbooru"):
         sql = f"SELECT tags,link FROM sauceusers WHERE user_id={user_id}"
@@ -19,19 +17,27 @@ def getNRecommendations(user_id, source, n):
     res = cursor.fetchall()
     if (len(res) == 0):
         return False
+
+    #Keep track of the most commonly occurring tags in the user's favourite images
     tagStr = ""
-    #keep record of the user's links
+    #keep record of the user's favourited images
     userLinkList = []
+
+    #Iterate through all the user's favourite images and their respective tags
     for tags, link in res: 
         tagStr += tags
         tagStr += " "
         userLinkList.append(link)
     tagList = tagStr.split()
+    #Fetch the three most commonly occurring tags (used for preliminary filtering)
     word1 = Counter(tagList).most_common(3)[0][0]
     word2 = Counter(tagList).most_common(3)[1][0]
     word3 = Counter(tagList).most_common(3)[2][0]
-    userTagCount = defaultdict(lambda: 0, dict(Counter(tagList)))
 
+    #Create a user profile vector with the number of occurences of each tag in all of the user's favourite images
+    userTagCount = dict(Counter(tagList))
+
+    #Fetch all of the images containing any of the user's 3 most commonly occurring tags
     if (source == "gelbooru"):
         sql = f"SELECT * from sauce WHERE tags LIKE '%{word1}%' OR tags LIKE '%{word2}%' OR tags LIKE '%{word3}%'"
     else:
@@ -39,29 +45,37 @@ def getNRecommendations(user_id, source, n):
     cursor.execute(sql)
     res = cursor.fetchall()
 
+    #Holds evaluation metrics
     linkScores = []
     linkMap = []
+
     for elem in res:
         link = elem[0]
-        #CHECK IF LINK IS ALREADY IN FAVOURITES
+        #Check if image is already in user's favourites
         if link in userLinkList:
             continue
         tags = elem[1]
-        linkTagCount = defaultdict(lambda: 0, dict(Counter(tags.split())))
-        dot_product = 0
-        userTagMag = 0
-        linkTagMag = 0
-        for key, val in userTagCount.items():
-            dot_product += val * linkTagCount[key]
-            userTagMag += val * val
-        for key, val in linkTagCount.items():
-            linkTagMag += val * val 
-        userTagMag = pow(userTagMag, 1/2)
-        linkTagMag = pow(linkTagMag, 1/2)
+        #We generate a tag count vector for all the tags of each image
+        linkTagCount = dict(Counter(tags.split()))
+
+        #Each image will have a tag vector looking that looks like {"tag1": 1, "tag2": 1, "tag3": 1, ....}
+        #The user profile vector will also look like {"tag1": (some number), "tag2": (some number) ...}
+
+        #This algorithm will treat each tag as an axis in cartesian space, and we will treat both dictionaries as vectors.
+        #We will use the cosine value of the angle between the vectors as a similarity metric
+        dot_product = sum(userTagCount[tag] * linkTagCount.get(tag, 0) for tag in userTagCount)
+        
+        userTagMag = pow(sum(userTagCount[tag] * userTagCount[tag] for tag in userTagCount), 0.5)
+        linkTagMag = pow(sum(linkTagCount[tag] * linkTagCount[tag] for tag in linkTagCount), 0.5)
+
+        #manually compute cosine sim
         cosine_sim = dot_product/(userTagMag * linkTagMag)
+        #Maps links to a cosine similarity score for reverse lookup
         linkMap.append([link, cosine_sim])
+        #We will only append the cosine sim scores so we have a single dimension list that can be quickly sorted
         linkScores.append(cosine_sim)
         linkScores.sort(reverse=True)
+    
     links = []
     if(n >= len(linkScores)):
         n = len(linkScores) - 1
