@@ -48,45 +48,6 @@ def dump_gelbooru(tags: str, pageLimit: int) -> int:
     db.close()
     return pid
 
-def dump_rule34(tags: str, pageLimit: int) -> int:
-    pid = 0
-    db = sqlite3.connect("scrapedlinks.sqlite")
-    cursor = db.cursor()
-    #parse tags param
-    tags = tags.replace("+", " ")
-
-    for i in range(pageLimit): 
-        url = "https://rule34.xxx/index.php?page=dapi&s=post&q=index&json=1"
-        url += ("&pid=" + str(pid))
-        url += ("&tags=" + tags)
-        resp = requests.get(url)
-        data = resp.json()
-        
-        try:
-            data = resp.json() 
-        except:
-            break
-
-        if (data == []):
-            break 
-
-        for entry in data: 
-            link = ("https://us.rule34.xxx/images/" + entry["directory"] + "/" + entry["image"])
-            entryTags = (entry["tags"])
-            score = (entry["score"])
-            try: 
-                sql = "INSERT OR IGNORE INTO sauce34(link, tags, score) VALUES(?, ?, ?)"
-                val = (link, entryTags, score)
-                cursor.execute(sql, val)   
-                print(pid)
-            except:
-                print("An error occurred.")
-            pid += 1
-    db.commit()
-    cursor.close()
-    db.close()
-    return pid
-
 def fetchByTag(tags: str, dbName: str, sfw: typing.Optional[bool] = False, sortByScore: typing.Optional[bool] = False) -> list:
     #parse tags param
     tagList = tags.split("+")    
@@ -176,7 +137,7 @@ async def _addfavourite(ctx: commands.Context, source: str, link: str):
         if (link is None):
             await ctx.send("Usage: .addfavourite [url]")
             return 
-        if not (("gelbooru.com" in link) or ("rule34.xxx" in link)):
+        if not (("gelbooru.com" in link)):
             await ctx.send("Please enter a valid link")
             return
         db = sqlite3.connect("scrapedlinks.sqlite")
@@ -241,90 +202,6 @@ async def sendrecommendations(ctx: commands.Context, source: str, limit: typing.
                 count += 1
     except:
         await ctx.send("Usage: .recommend [numofrecommendations]")
-
-
-
-
-class Rule34Cog(commands.Cog, name= "Rule34Scrape"):
-    def __init__(self, bot):
-        self.bot = bot 
-    @commands.Cog.listener()
-    async def on_reaction_add(self, reaction, user):
-        if user == self.bot.user:
-            return 
-        if "us.rule34.xxx" in reaction.message.embeds[0].image.url:
-            if (reaction.emoji == '👍'): 
-                db = sqlite3.connect("scrapedlinks.sqlite")
-                cursor = db.cursor()
-                sql = f"SELECT tags FROM sauce34 WHERE link = '{reaction.message.embeds[0].image.url}'"
-                cursor.execute(sql)
-                result = cursor.fetchone()
-
-                if (result is None):
-                    await self.bot.send("Unknown link detected")
-                    return
-
-                tags = result[0]
-
-                sql = "INSERT OR IGNORE INTO sauce34users(user_id, link, tags) VALUES(?, ?, ?)"
-                val = (user.id, reaction.message.embeds[0].image.url, tags)
-                cursor.execute(sql, val)
-                db.commit()
-                cursor.close()
-                db.close()
-                await reaction.message.channel.send(user.mention + " has added an image to their favourites")
-    
-    @commands.group(invoke_without_command=True)
-    async def rule34(self, ctx):
-        await ctx.send("available commands: load_db, bomb, bomball, bombtop, addfavourite, removefavourite, favourites")
-
-    @rule34.command()
-    async def load_db(self, ctx, tags=None, pageLimit: typing.Optional[int] = 10000):   
-        try:
-            if tags is None:
-                await ctx.send("Usage: .load_db [tags separated by +] [numberOfPages=50]")
-                return 
-            pid = await asyncio.get_event_loop().run_in_executor(ThreadPoolExecutor(max_workers=1), partial(dump_rule34, tags, pageLimit))
-            await ctx.send(str(pid) + " pages loaded")
-        except:
-            await ctx.send("An error occured. Usage: .load_db [tags separated by +] [numberOfPages=50]")
-
-    @rule34.command()
-    async def bomb(self, ctx, tags=None, limit: typing.Optional[int] = 10):
-        if (tags is None):
-            await ctx.send("Please specify some tags.")
-            return 
-        await sendimgs(ctx, tags, "sauce34", "random", limit, False)
-    
-    @rule34.command()
-    async def bomball(self, ctx, tags=None, limit: typing.Optional[int] = 10):
-        if (tags is None):
-            await ctx.send("Please specify some tags.")
-            return 
-        await sendimgs(ctx, tags, "sauce34", "standard", limit, False)
-    
-    @rule34.command()
-    async def bombtop(self, ctx, tags=None, limit: typing.Optional[int] = 10):
-        if (tags is None):
-            await ctx.send("Please specify some tags.")
-            return 
-        await sendimgs(ctx, tags, "sauce34", "top", limit, False)
-
-    @rule34.command()
-    async def addfavourite(self, ctx, link=None):
-        await _addfavourite(ctx, "rule34", link)
-    
-    @rule34.command()
-    async def removefavourite(self, ctx, link=None):
-        await _removefavourite(ctx, "sauce34users", link)
-    
-    @rule34.command()
-    async def favourites(self, ctx):
-        await sendfavourites(ctx, "sauce34users")
-
-    @rule34.command()
-    async def recommend(self, ctx, limit: int=10):
-        await sendrecommendations(ctx, "rule34", limit)
 
 
 class GelbooruCog(commands.Cog, name = "GelbooruScrape"):
@@ -416,5 +293,3 @@ class GelbooruCog(commands.Cog, name = "GelbooruScrape"):
 def setup(bot):
     bot.add_cog(GelbooruCog(bot))
     print("gelbooru cog is loaded")
-    bot.add_cog(Rule34Cog(bot))
-    print("rule34 cog is loaded")
